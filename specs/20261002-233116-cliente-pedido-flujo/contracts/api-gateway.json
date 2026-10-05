@@ -1,0 +1,69 @@
+# API Contracts Mapping (Gateway http://localhost:8080)
+
+## POST /usuarios/login
+Request:
+```json
+{ "correo": "string", "contrasena": "string" }
+```
+Response 200:
+```json
+{ "token": "string", "rol": "cliente|cocinero|cajero|administrador", "usuarioId": "number|string" }
+```
+Errors: 401/400 → `{ "error": "string", "codigo": "string", "timestamp": "ISO8601" }`
+
+## GET /platos (público)
+Query: filtros/paginado (según backend). Response lista platos.
+```json
+[
+  { "id": 1, "nombre": "string", "descripcion": "string", "precio": 1000, "categoria": "string" }
+]
+```
+
+## GET /categorias (público)
+```json
+[ { "id": 1, "nombre": "string" } ]
+```
+
+## POST /pedidos (protegido, rol cliente)
+Headers: `Authorization: Bearer {token}`
+Request:
+```json
+{
+  "lineas": [ { "platoId": 1, "cantidad": 2 } ],
+  "direccionEntrega": "string"
+}
+```
+Response 201:
+```json
+{
+  "id": 1,
+  "estado": "PENDIENTE|CONFIRMADO|CANCELADO",
+  "total": 2000,
+  "lineas": [ { "platoId": 1, "cantidad": 2, "precio": 1000 } ]
+}
+```
+
+## POST /pagos (protegido)
+Headers: `Authorization: Bearer {token}`
+Request:
+```json
+{ "pedidoId": 1, "monto": 2000, "metodoPago": "efectivo|tarjeta" }
+```
+Response:
+```json
+{ "pagoId": 1, "pedidoId": 1, "monto": 2000, "metodoPago": "efectivo|tarjeta" }
+```
+
+## POST /pagos/{pagoId}/intentos (protegido)
+Response:
+```json
+{ "estado": "EXITOSO|FALLIDO", "mensaje": "string" }
+```
+
+## GET /pedidos/{id} (protegido)
+Response:
+```json
+{ "id": 1, "estado": "PENDIENTE|CONFIRMADO|CANCELADO", "total": 2000, "direccionEntrega": "string", "lineas": [...] }
+```
+
+**Notas**: Todas llamadas a `http://localhost:8080`. Errores siempre formato uniforme. Token requerido para endpoints protegidos.
