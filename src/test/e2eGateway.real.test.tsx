@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, beforeEach, afterAll } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { MemoryRouter } from 'react-router-dom';
 import { AuthProvider } from '../contexts/AuthContext';
 import Login from '../components/Login/Login';
 import Menu from '../components/Menu/Menu';
@@ -64,10 +65,14 @@ describe('E2E real contra gateway vivo http://localhost:8080', () => {
   let PEDIDO_CREADO_ID: number | null = null;
 
   it('1. Login real -> POST /usuarios/login y persistencia de token', async () => {
+    // MemoryRouter envuelve a AuthProvider: AuthContext usa useNavigate para el
+    // redirect de 401, y Login redirige a /dashboard al quedar autenticado.
     render(
-      <AuthProvider>
-        <Login />
-      </AuthProvider>
+      <MemoryRouter>
+        <AuthProvider>
+          <Login />
+        </AuthProvider>
+      </MemoryRouter>
     );
 
     expect(screen.getByRole('heading', { name: /iniciar sesi/i })).toBeInTheDocument();
@@ -83,8 +88,10 @@ describe('E2E real contra gateway vivo http://localhost:8080', () => {
     await waitFor(() => {
       expect(obtenerRed().some((e) => e.url.includes('/usuarios/login'))).toBe(true);
     });
+    // El exito ya no se marca con texto "Autenticado": Login se desmonta al
+    // redirigir. Se verifica la sesion persistida, que es el contrato real.
     await waitFor(() => {
-      expect(screen.getByText(/autenticado/i)).toBeInTheDocument();
+      expect(localStorage.getItem('token')).toBeTruthy();
     });
 
     const login = obtenerRed().find((e) => e.url.includes('/usuarios/login'))!;
@@ -156,12 +163,25 @@ describe('E2E real contra gateway vivo http://localhost:8080', () => {
     console.log('    "Añadir al carrito" renderizados:', botones.length);
     expect(botones.length).toBeGreaterThan(0);
 
-    // CORRECCION 2: categoria llega como objeto { id, nombre } y se renderiza el nombre
-    expect(screen.getAllByText(/^Categoría: /).length).toBeGreaterThan(0);
-    const primeraCat = screen.getAllByText(/^Categoría: /)[0].textContent;
-    console.log('    primera categoria renderizada:', primeraCat);
-    expect(primeraCat).not.toBe('Categoría: [object Object]');
-    expect(primeraCat).toMatch(/^Categoría: .+/);
+    // CORRECCION 2: categoria llega como objeto { id, nombre } y Menu renderiza SOLO el
+    // nombre dentro de .plato-card-categoria (sin el prefijo "Categoría: "). Se valida
+    // contra los nombres reales devueltos por GET /categorias.
+    const celdasCat = Array.from(
+      document.querySelectorAll<HTMLElement>('.plato-card-categoria')
+    );
+    const renderizadas = celdasCat
+      .map((el) => el.textContent?.trim() ?? '')
+      .filter((n) => n.length > 0);
+    const nombresReales = (JSON.parse(categorias.responseBody) as { id: number; nombre: string }[])
+      .map((c) => c.nombre.toUpperCase());
+
+    console.log('    categorias reales backend:', nombresReales.join(' | '));
+    console.log('    categorias renderizadas  :', renderizadas.slice(0, 5).join(' | '));
+
+    expect(celdasCat.length).toBeGreaterThan(0);
+    expect(renderizadas.length).toBeGreaterThan(0);
+    expect(renderizadas.some((n) => n.includes('[object Object]'))).toBe(false);
+    expect(renderizadas.every((n) => nombresReales.includes(n.toUpperCase()))).toBe(true);
 
     // El filtro por categoria existe y esta enlazado por id
     const filtro = screen.getByLabelText(/categoría/i) as HTMLSelectElement;
@@ -173,11 +193,14 @@ describe('E2E real contra gateway vivo http://localhost:8080', () => {
 
   it('3. Pedido real -> MENU y PEDIDO comparten el carrito y COINCIDEN los 2 endpoints', async () => {
     // Se monta igual que App.tsx: CarritoProvider envuelve a Menu y Pedido.
+    // El Router se incluye porque Pedido usa useNavigate para "Ir a pagar".
     render(
-      <CarritoProvider>
-        <Menu />
-        <PedidoComponent />
-      </CarritoProvider>
+      <MemoryRouter>
+        <CarritoProvider>
+          <Menu />
+          <PedidoComponent />
+        </CarritoProvider>
+      </MemoryRouter>
     );
 
     await waitFor(
@@ -187,13 +210,16 @@ describe('E2E real contra gateway vivo http://localhost:8080', () => {
       { timeout: 20000 }
     );
 
-    // 1) Con carrito vacio el boton arranca deshabilitado
-    const boton = screen.getByRole('button', { name: /confirmar pedido/i }) as HTMLButtonElement;
-    console.log('\n>>> PEDIDO: con carrito vacio, "Confirmar pedido" disabled =', boton.disabled);
-    expect(boton.disabled).toBe(true);
+    // 1) Con carrito vacio NO se renderiza el formulario: muestra el estado
+    //    vacio con mensaje y "Ir al menú" (nuevo contrato del punto 1).
+    expect(screen.queryByRole('button', { name: /confirmar pedido/i })).toBeNull();
+    expect(screen.getByText(/tu carrito está vacío/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /ir al menú/i })).toBeInTheDocument();
+    console.log('\n>>> PEDIDO: carrito vacio -> sin formulario, muestra "Tu carrito está vacío..." + "Ir al menú"');
 
-    // 2) Se agrega un plato desde MENU -> el estado debe llegar a PEDIDO
-    // Se elige "Bacon Burger": hay platos seed sin stock que mc-pedidos rechaza con 409.
+    // 2) Se agrega un plato desde MENU -> el estado debe llegar a PEDIDO y
+    //    aparece el formulario. Se elige "Bacon Burger": hay platos seed sin
+    //    stock que mc-pedidos rechaza con 409.
     const titulos = screen.getAllByRole('heading', { level: 3 });
     const indice = titulos.findIndex((h) => h.textContent?.trim() === 'Bacon Burger');
     console.log('\n>>> CARRITO: platos en pantalla =', titulos.length, '| indice Bacon Burger =', indice);
@@ -202,10 +228,13 @@ describe('E2E real contra gateway vivo http://localhost:8080', () => {
     const agregar = screen.getAllByRole('button', { name: /añadir al carrito/i })[indice];
     fireEvent.click(agregar);
 
+    const boton = (await screen.findByRole('button', {
+      name: /confirmar pedido/i,
+    })) as HTMLButtonElement;
     await waitFor(() => {
       expect(boton.disabled).toBe(false);
     });
-    console.log('>>> CARRITO COMPARTIDO: tras "Añadir al carrito" en Menu, disabled =', boton.disabled);
+    console.log('>>> CARRITO COMPARTIDO: tras "Añadir al carrito" en Menu, formulario visible y disabled =', boton.disabled);
 
     // El unico textbox de la pantalla es el campo de direccion de Pedido
     const direccion = screen.getByRole('textbox');
@@ -242,10 +271,12 @@ describe('E2E real contra gateway vivo http://localhost:8080', () => {
     expect(enviado.lineas[0]).toHaveProperty('platoId');
     expect(enviado.lineas[0]).toHaveProperty('cantidad');
 
-    // Tras crear, Pedido muestra el estado real devuelto por el backend
+    // Tras crear, Pedido muestra la vista "Pedido creado" con "Ir a pagar"
+    // (el boton "Actualizar estado" ya no existe por el punto 2).
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /actualizar estado/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /ir a pagar/i })).toBeInTheDocument();
     });
+    expect(screen.queryByRole('button', { name: /actualizar estado/i })).toBeNull();
 
     const creado = JSON.parse(crear.responseBody);
     PEDIDO_CREADO_ID = creado.id;
@@ -260,9 +291,17 @@ describe('E2E real contra gateway vivo http://localhost:8080', () => {
     // El id es el de un pedido creado por el test 3 a traves de la UI real.
     if (!PEDIDO_CREADO_ID) throw new Error('El test 3 no dejo un pedido creado');
 
-    render(<Pago pedidoId={PEDIDO_CREADO_ID} monto={45000} />);
+    // Pago ahora usa useNavigate y useCarrito (botones de salida tras pagar),
+    // asi que necesita Router y CarritoProvider, igual que en App.tsx.
+    render(
+      <MemoryRouter>
+        <CarritoProvider>
+          <Pago pedidoId={PEDIDO_CREADO_ID} monto={45000} />
+        </CarritoProvider>
+      </MemoryRouter>
+    );
 
-    expect(screen.getByRole('heading', { name: /^pago$/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /^pago/i })).toBeInTheDocument();
 
     const combo = screen.getByRole('combobox') as HTMLSelectElement;
     const metodos = Array.from(combo.options).map((o) => o.value);
@@ -319,7 +358,7 @@ describe('E2E real contra gateway vivo http://localhost:8080', () => {
     expect(crear.status).toBe(201);
     expect(intento.status).toBe(200);
     await waitFor(() => {
-      expect(screen.getByText(/Resultado:/)).toBeInTheDocument();
+      expect(screen.getByText(/pago exitoso/i)).toBeInTheDocument();
     });
     const estadoPago = JSON.parse(intento.responseBody).estado;
     console.log('    estado del pago mostrado:', estadoPago);

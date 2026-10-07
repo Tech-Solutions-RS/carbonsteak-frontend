@@ -71,7 +71,8 @@ nav {
   margin-bottom: 1.5rem;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 nav a {
   color: var(--text-secondary);
@@ -83,11 +84,24 @@ nav a:hover {
   background: #f1f5f9;
   color: var(--primary);
 }
-nav .divider {
-  margin: 0 0.5rem;
-  width: 1px;
-  height: 1.5rem;
-  background: var(--border);
+.nav-links,
+.nav-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+.nav-actions {
+  margin-left: auto;
+  gap: 0.75rem;
+}
+.nav-user {
+  color: var(--text);
+  font-weight: 600;
+}
+.nav-user:hover {
+  background: transparent;
+  color: var(--primary);
 }
 .title-bar {
   display: flex;
@@ -100,6 +114,12 @@ nav .divider {
   font-weight: 600;
   color: var(--text);
   margin: 0;
+}
+.filtro-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  white-space: nowrap;
 }
 .category-select {
   flex: 1;
@@ -118,7 +138,201 @@ nav .divider {
 }
 
 /* ===========================
-   Lista de Platos - Tarjetas
+   Tarjeta única de pantalla
+   =========================== */
+.screen-card {
+  background: var(--card-bg);
+  padding: 2rem;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  width: 100%;
+  margin: 2rem auto;
+}
+.screen-card--form {
+  max-width: 400px;
+}
+.screen-card--detalle {
+  max-width: 640px;
+}
+.screen-card > h2 {
+  margin: 0 0 1.5rem 0;
+  text-align: center;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* ===========================
+   Botones (regla global: antes solo existia .login-card .btn)
+   =========================== */
+.btn {
+  display: inline-block;
+  padding: 0.6rem 1.25rem;
+  background: var(--primary);
+  color: white;
+  font-size: 1rem;
+  font-weight: 500;
+  text-align: center;
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-btn);
+  transition: background 0.2s, border-color 0.2s;
+}
+.btn:hover {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+.btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.15);
+}
+.btn:disabled {
+  background: #94a3b8;
+  border-color: #94a3b8;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+.btn--outline {
+  background: transparent;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+}
+.btn--outline:hover {
+  background: #eff6ff;
+  border-color: var(--primary);
+}
+.btn--ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+.btn--ghost:hover {
+  background: #f1f5f9;
+  color: var(--primary);
+  border-color: var(--border);
+}
+.btn--sm {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.8125rem;
+}
+.btn--full {
+  width: 100%;
+}
+.btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+.btn-row > .btn--full {
+  flex: 1 1 100%;
+}
+
+/* ===========================
+   Bloques de apoyo: espaciado, avisos, filas de total
+   =========================== */
+.stack > * + * {
+  margin-top: 1rem;
+}
+.alert {
+  padding: 0.75rem 1rem;
+  margin-top: 1rem;
+  border-radius: var(--radius-btn);
+  border: 1px solid;
+  font-size: 0.9375rem;
+}
+.alert--error {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+.alert--success {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #15803d;
+}
+.alert--warn {
+  background: #fffbeb;
+  border-color: #fde69c;
+  color: #92400e;
+}
+.total-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+.resumen-linea {
+  margin-top: 1rem;
+  font-size: 0.9375rem;
+  color: var(--text-secondary);
+}
+.resumen-linea strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* ===========================
+   Identidad (IDs de pedido / pago) y estado
+   =========================== */
+.id-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.id-block {
+  flex: 1 1 180px;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-btn);
+  padding: 0.75rem 1rem;
+}
+.id-block .id-label {
+  display: block;
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+}
+.id-block .id-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+.badge--pendiente {
+  background: #fef3c7;
+  color: #92400e;
+}
+.badge--confirmado,
+.badge--exitoso {
+  background: #dcfce7;
+  color: #166534;
+}
+.badge--cancelado,
+.badge--rechazado {
+  background: #f1f5f9;
+  color: #475569;
+}
+.badge--revision,
+.badge--reembolso {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+/* ===========================
+   Listas de Platos - Tarjetas
    =========================== */
 .platos-grid {
   display: grid;
@@ -177,32 +391,14 @@ nav .divider {
 }
 
 /* ===========================
-   Carrito lateral
+   Carrito (filas de item y total)
    =========================== */
-.cart-sidebar {
-  position: fixed;
-  top: 0;
-  right: 0;
-  height: 100vh;
-  width: 280px;
-  background: var(--card-bg);
-  box-shadow: -4px 0 12px rgba(0,0,0,0.05);
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  z-index: 100;
-}
-.cart-sidebar h3 {
-  margin: 0 0 1rem 0;
-  font-size: 1rem;
-  font-weight: 600;
-}
 .cart-item {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 0.5rem;
-  margin: 0 0 0.75rem 0;
-  padding: 0 0 0.75rem 0;
+  padding: 0.75rem 0;
   border-bottom: 1px solid var(--border);
 }
 .cart-item .nombre {
@@ -213,34 +409,19 @@ nav .divider {
   color: var(--text-secondary);
   font-size: 0.8125rem;
 }
-.cart-total {
-  margin-top: auto;
-  padding-top: 1rem;
-  border-top: 1px solid var(--border);
-  font-weight: 600;
-  color: var(--text);
+.cart-item .acciones {
+  display: flex;
+  gap: 0.5rem;
+}
+.cart-item .subtotal {
+  width: 100%;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
 }
 
 /* ===========================
-   Pantallas de Pedido y Pago
+   Formularios dentro de las tarjetas
    =========================== */
-.pedido-screen,
-.pago-screen {
-  max-width: 640px;
-  margin: 2rem auto;
-  padding: 1.5rem;
-  background: var(--card-bg);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-}
-.pedido-screen h1,
-.pago-screen h1 {
-  margin: 0 0 1rem 0;
-  font-size: 1.5rem;
-  font-weight: 600;
-  text-align: center;
-  color: var(--text);
-}
 .form-group {
   margin: 0 0 1rem 0;
 }
@@ -251,7 +432,9 @@ nav .divider {
   font-size: 0.875rem;
 }
 .form-group input,
-.form-group select {
+.form-group select,
+.screen-card input,
+.screen-card select {
   width: 100%;
   padding: 0.6rem 0.75rem;
   border: 1px solid var(--border);
@@ -261,95 +444,79 @@ nav .divider {
   color: var(--text);
 }
 .form-group input:focus,
-.form-group select:focus {
+.form-group select:focus,
+.screen-card input:focus,
+.screen-card select:focus {
   outline: none;
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
 }
-.pago-methods .method {
-  margin: 0 0 0.75rem 0;
-  padding: 0.5rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-btn);
-  background: white;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+.screen-card .btn-row .btn,
+.screen-card form > .btn {
+  margin-top: 0;
 }
-.pago-methods .method:hover {
-  background: #f8fafc;
+.card-link {
+  display: block;
+  margin-top: 1.5rem;
+  text-align: center;
+  font-size: 0.9375rem;
 }
-.pago-methods .method input {
-  margin: 0;
-}
-.pago-methods .method label {
-  font-size: 0.875rem;
-}
-.pago-btn {
-  width: 100%;
-  margin: 1rem 0 0 0;
-  padding: 0.6rem;
-  border-radius: var(--radius-btn);
-  background: var(--primary);
-  color: white;
-  font-size: 1rem;
+.card-link a {
+  color: var(--primary);
   font-weight: 500;
-  border: none;
-  transition: background 0.2s;
 }
-.pago-btn:hover {
-  background: var(--primary-hover);
-}
-.pago-btn:focus,
-.pago-btn:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.15);
+.card-link a:hover {
+  text-decoration: underline;
 }
 
 /* ===========================
-   Login form (ya existente, sin cambios mayores)
+   Estado vacio (carrito / sin pedidos)
    =========================== */
-.login-card {
-  background: var(--card-bg);
-  padding: 2rem;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  width: 100%;
-  max-width: 400px;
-  margin: 2rem auto;
-}
-.login-card h2 {
-  margin: 0 0 1.5rem 0;
+.empty-state {
   text-align: center;
-  font-size: 1.25rem;
+  padding: 1.5rem 0.5rem;
+  color: var(--text-secondary);
+}
+.empty-state p {
+  margin-bottom: 1rem;
+}
+
+/* ===========================
+   Historial "Mis pedidos" y detalle
+   =========================== */
+.fila-pedido {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border);
+  list-style: none;
+}
+.fila-pedido:last-child {
+  border-bottom: none;
+}
+.fila-pedido-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  flex: 1;
+  min-width: 120px;
+}
+.fila-pedido-id {
+  font-weight: 700;
   color: var(--text);
 }
-.login-card input {
-  width: 100%;
-  padding: 0.6rem;
-  margin: 0 0 0.75rem 0;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-btn);
-  font-size: 1rem;
-  background: white;
+.fila-pedido-fecha {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+.fila-pedido-total {
+  font-weight: 600;
   color: var(--text);
 }
-.login-card input:focus {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
-}
-.login-card .btn {
-  width: 100%;
-  padding: 0.6rem;
-  background: var(--primary);
-  color: white;
-  font-size: 1rem;
-  font-weight: 500;
-  border-radius: var(--radius-btn);
-  border: none;
-  transition: background 0.2s;
-}
-.login-card .btn:hover {
-  background: var(--primary-hover);
+.lineas-pedido {
+  margin: 0;
+  padding: 0;
 }

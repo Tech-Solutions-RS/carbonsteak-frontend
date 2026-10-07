@@ -3,6 +3,7 @@ import { getPlatos, getCategorias } from '../../services/platos';
 import type { Plato } from '../../types/plato';
 import { useCarrito } from '../../hooks/useCarrito';
 import { formatError } from '../../utils/errors';
+import { formatCOP } from '../../utils/format';
 
 const TODAS = 'todas';
 
@@ -43,6 +44,9 @@ export default function Menu() {
     <div className="main-container">
       <div className="title-bar">
         <h1>Menú</h1>
+        <label htmlFor="filtro-categoria" className="filtro-label">
+          Categoría
+        </label>
         <select
           id="filtro-categoria"
           className="category-select"
@@ -67,8 +71,8 @@ export default function Menu() {
               </p>
               <h3 className="plato-card-nombre">{plato.nombre}</h3>
               {plato.descripcion && <p className="plato-card-desc">{plato.descripcion}</p>}
-              <p className="plato-card-precio">${plato.precio}</p>
-              <button className="btn-agregar" onClick={() => add(plato, 1)}>
+              <p className="plato-card-precio">{formatCOP(plato.precio)}</p>
+              <button className="btn btn-agregar" onClick={() => add(plato, 1)}>
                 Añadir al carrito
               </button>
             </div>

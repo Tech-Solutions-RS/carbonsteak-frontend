@@ -1,88 +1,101 @@
 import { useState } from 'react';
-import { api } from '../../services/api';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import { formatError } from '../../utils/errors';
+import Carta from '../common/Carta';
 
 export default function Register() {
+  const { registro, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+
+  // Los 4 campos son los unicos que pide POST /usuarios/registro (@NotBlank).
   const [nombre, setNombre] = useState('');
   const [correo, setCorreo] = useState('');
   const [contrasena, setContrasena] = useState('');
   const [telefono, setTelefono] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [exito, setExito] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const manejarSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    setExito(null);
 
-    // Validación: campos obligatorios
     if (!nombre.trim()) {
       setError('El nombre es obligatorio');
       return;
     }
-
-    if (!correo || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
-      setError('Por favor, introduce un correo electrónico válido');
+    if (!correo.trim()) {
+      setError('El correo es obligatorio');
       return;
     }
-
     if (!contrasena) {
       setError('La contraseña es obligatoria');
       return;
     }
-
     if (!telefono.trim()) {
       setError('El teléfono es obligatorio');
       return;
     }
 
-    // Validación: contraseñas coinciden
-    if (contrasena !== confirmPassword) {
-      setError('Las contraseñas no coinciden');
-      return;
-    }
+    setError(null);
+    setLoading(true);
 
     try {
-      await api.post('/usuarios/registro', { nombre, correo, contrasena, telefono });
-      setExito('¡Registro exitoso! Ya puedes iniciar sesión.');
-      setTimeout(() => {
-        setExito(null);
-      }, 3000);
-    } catch (err: any) {
-      const message = err.response?.data?.error || err.message || 'Error al registrar';
-      setError(message);
+      // registro() hace POST /usuarios/registro y luego POST /usuarios/login
+      // con las mismas credenciales, dejando la sesion ya abierta.
+      await registro({
+        nombre: nombre.trim(),
+        correo: correo.trim(),
+        contrasena,
+        telefono: telefono.trim(),
+      });
+      navigate('/dashboard', { replace: true });
+    } catch (err) {
+      setError(formatError(err));
+    } finally {
+      setLoading(false);
     }
   };
 
-  return (
-    <div className="pedido-screen">
-      <h1>Registro</h1>
+  if (isAuthenticated) {
+    return <p>Sesión activa. Redirigiendo...</p>;
+  }
 
-      {error && <p style={{ color: 'red', marginBottom: '1rem' }}>{error}</p>}
-      {exito && <p style={{ color: 'green', marginBottom: '1rem' }}>¡Registro exitoso! Ya puedes iniciar sesión.</p>}
+  return (
+    <Carta titulo="Registro" ancho="form">
+      {error && (
+        <p role="alert" className="alert alert--error">
+          {error}
+        </p>
+      )}
 
       <form onSubmit={manejarSubmit}>
         <div className="form-group">
-          <label htmlFor="nombre">Nombre completo</label>
+          <label htmlFor="nombre">Nombre</label>
           <input
             type="text"
             id="nombre"
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
-            placeholder="Juan Pérez"
-            required
           />
         </div>
 
         <div className="form-group">
-          <label htmlFor="correo">Correo electrónico</label>
+          <label htmlFor="correo">Correo</label>
           <input
             type="email"
             id="correo"
             value={correo}
             onChange={(e) => setCorreo(e.target.value)}
-            placeholder="juan.perez@ejemplo.com"
-            required
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="contrasena">Contraseña</label>
+          <input
+            type="password"
+            id="contrasena"
+            value={contrasena}
+            onChange={(e) => setContrasena(e.target.value)}
           />
         </div>
 
@@ -93,43 +106,17 @@ export default function Register() {
             id="telefono"
             value={telefono}
             onChange={(e) => setTelefono(e.target.value)}
-            placeholder="+52 55 1234 5678"
-            required
           />
         </div>
 
-        <div className="form-group">
-          <label htmlFor="password">Contraseña</label>
-          <input
-            type="password"
-            id="password"
-            value={contrasena}
-            onChange={(e) => setContrasena(e.target.value)}
-            placeholder="••••••••"
-            required
-          />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="confirm-password">Confirmar contraseña</label>
-          <input
-            type="password"
-            id="confirm-password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            placeholder="••••••••"
-            required
-          />
-        </div>
-
-        <button type="submit" className="pago-btn" style={{ marginTop: '1.5rem' }}>
-          Registrarse
+        <button type="submit" className="btn btn--full" disabled={loading}>
+          {loading ? 'Registrando...' : 'Registrarse'}
         </button>
       </form>
 
-      <p style={{ marginTop: '1.5rem', textAlign: 'center' }}>
-        ¿Ya tienes cuenta? <a href="/login" style={{ color: '#3b82f6', textDecoration: 'underline' }}>Inicia sesión</a>
+      <p className="card-link">
+        ¿Ya tienes cuenta? <Link to="/login">Inicia sesión</Link>
       </p>
-    </div>
+    </Carta>
   );
 }

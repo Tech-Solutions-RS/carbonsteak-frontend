@@ -5,13 +5,15 @@ import { CarritoProvider } from '../../hooks/useCarrito';
 import { AuthProvider } from '../../contexts/AuthContext';
 import Menu from './Menu';
 
+// El Router envuelve a AuthProvider porque AuthContext usa useNavigate
+// (redirección al expirar la sesión por 401).
 function wrapper({ children }: { children: React.ReactNode }) {
   return (
-    <AuthProvider>
-      <CarritoProvider>
-        <BrowserRouter>{children}</BrowserRouter>
-      </CarritoProvider>
-    </AuthProvider>
+    <BrowserRouter>
+      <AuthProvider>
+        <CarritoProvider>{children}</CarritoProvider>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
 

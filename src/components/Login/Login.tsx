@@ -1,77 +1,78 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { formatError } from '../../utils/errors';
-import { getPerfil } from '../../services/usuario';
-import { Navigate } from 'react-router-dom';
+import Carta from '../common/Carta';
 
 export default function Login() {
-  const { login, isAuthenticated, token } = useAuth();
+  const { login, isAuthenticated } = useAuth();
   const [correo, setCorreo] = useState('');
   const [contrasena, setContrasena] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [perfil, setPerfil] = useState<any>(null);
 
-  // Cargar perfil UNA sola vez después de que el usuario se autentique
-  // Este useEffect se ejecuta solo cuando isAuthenticated cambia de false a true
-  useEffect(() => {
-    if (isAuthenticated && !perfil && token) {
-      setLoading(true);
-      getPerfil().then((data) => {
-        // Guardamos el perfil para posible uso futuro, pero no lo mostramos aquí
-        // (se almacenará en el contexto auth para que otros componentes lo usen)
-        console.log('Perfil cargado:', data);
-        setPerfil(data);
-        setLoading(false);
-      }).catch((err) => {
-        // Error al obtener perfil, pero el usuario ya está logueado, no es crítico
-        console.error('Error al obtener perfil:', err);
-        setLoading(false);
-      });
-    }
-  }, [isAuthenticated, perfil, token]);
-
+  // Body exacto de POST /usuarios/login: solo correo y contrasena.
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+
+    if (!correo.trim()) {
+      setError('El correo es obligatorio');
+      return;
+    }
+
+    if (!contrasena) {
+      setError('La contraseña es obligatoria');
+      return;
+    }
+
     setError(null);
+    setLoading(true);
+
     try {
-      await login({ correo, contrasena });
-      // Después de un pequeño delay, redirigir al dashboard
-      // Usamos setTimeout para asegurar que el estado de auth se haya actualizado
-      setTimeout(() => {
-        // Navegamos al dashboard; replace: true significa que no se agrega historial atrás
-        // window.location.pathname = '/dashboard';
-      }, 100);
+      await login({ correo: correo.trim(), contrasena });
+      // El token ya quedo guardado; el render siguiente redirige al dashboard.
     } catch (err) {
+      // El backend responde { error, codigo, timestamp }; formatError toma err.error.
       setError(formatError(err));
     } finally {
       setLoading(false);
     }
   };
 
-  // Si ya está autenticado, redirigir al dashboard (evitar ver el formulario de login)
   if (isAuthenticated) {
     return <Navigate to="/dashboard" replace />;
   }
 
   return (
-    <div className="login-card">
-      <h2>Iniciar sesión</h2>
+    <Carta titulo="Iniciar sesión" ancho="form">
       <form onSubmit={handleSubmit}>
-        <div>
-          <label>Correo</label>
-          <input type="email" value={correo} onChange={(e) => setCorreo(e.target.value)} required />
+        <div className="form-group">
+          <label htmlFor="correo">Correo</label>
+          <input
+            id="correo"
+            type="email"
+            value={correo}
+            onChange={(e) => setCorreo(e.target.value)}
+          />
         </div>
-        <div>
-          <label>Contraseña</label>
-          <input type="password" value={contrasena} onChange={(e) => setContrasena(e.target.value)} required />
+        <div className="form-group">
+          <label htmlFor="contrasena">Contraseña</label>
+          <input
+            id="contrasena"
+            type="password"
+            value={contrasena}
+            onChange={(e) => setContrasena(e.target.value)}
+          />
         </div>
-        <button type="submit" className="btn" disabled={loading}>
+        <button type="submit" className="btn btn--full" disabled={loading}>
           {loading ? 'Cargando...' : 'Ingresar'}
         </button>
       </form>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-    </div>
+      {error && (
+        <p role="alert" className="alert alert--error">
+          {error}
+        </p>
+      )}
+    </Carta>
   );
 }

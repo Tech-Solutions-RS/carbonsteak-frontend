@@ -10,6 +10,9 @@ export type Pedido = {
   total: number;
   direccionEntrega?: string;
   lineas: LineaPedido[];
+  /** El backend (mc-pedidos) devuelve estos campos al consultar GET /pedidos/{id}. */
+  fechaCreacion?: string;
+  usuarioId?: number | string;
 };
 
 export type CrearPedidoRequest = {

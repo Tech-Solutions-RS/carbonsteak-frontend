@@ -1,33 +1,62 @@
 import { useCarrito } from '../../hooks/useCarrito';
+import { formatCOP } from '../../utils/format';
+import Carta from '../common/Carta';
 
 export default function Carrito() {
   const { items, total, isEmpty, update, remove, clear } = useCarrito();
 
-  if (isEmpty) return <div>El carrito está vacío</div>;
+  if (isEmpty) {
+    return (
+      <Carta titulo="Carrito" ancho="detalle">
+        <p className="resumen-linea">El carrito está vacío</p>
+      </Carta>
+    );
+  }
 
   return (
-    <div>
-      <h2>Carrito</h2>
+    <Carta titulo="Carrito" ancho="detalle">
       {items.map((item) => (
-        <div key={item.platoId} style={{ border: '1px solid #ccc', padding: '1rem', margin: '1rem' }}>
-          <h4>{item.plato?.nombre}</h4>
-          <p>Cantidad: {item.cantidad}</p>
-          <p>Subtotal: ${((item.plato?.precio || 0) * item.cantidad).toFixed(2)}</p>
-          <button onClick={() => update(item.platoId, item.cantidad + 1)} className="btn">
-            +
-          </button>
-          <button onClick={() => update(item.platoId, item.cantidad - 1)} className="btn">
-            -
-          </button>
-          <button onClick={() => remove(item.platoId)} className="btn">
-            Eliminar
-          </button>
+        <div key={item.platoId} className="cart-item">
+          <span className="nombre">{item.plato?.nombre}</span>
+          <span className="cantidad">Cantidad: {item.cantidad}</span>
+
+          <span className="acciones">
+            <button
+              className="btn btn--outline btn--sm"
+              onClick={() => update(item.platoId, item.cantidad + 1)}
+            >
+              +
+            </button>
+            <button
+              className="btn btn--outline btn--sm"
+              onClick={() => update(item.platoId, item.cantidad - 1)}
+            >
+              -
+            </button>
+            <button
+              className="btn btn--ghost btn--sm"
+              onClick={() => remove(item.platoId)}
+            >
+              Eliminar
+            </button>
+          </span>
+
+          <span className="subtotal">
+            Subtotal: {formatCOP((item.plato?.precio || 0) * item.cantidad)}
+          </span>
         </div>
       ))}
-      <h3>Total: ${total.toFixed(2)}</h3>
-      <button onClick={clear} className="btn">
-        Vaciar carrito
-      </button>
-    </div>
+
+      <div className="total-row">
+        <span>Total</span>
+        <span>{formatCOP(total)}</span>
+      </div>
+
+      <div className="btn-row">
+        <button className="btn btn--ghost" onClick={clear}>
+          Vaciar carrito
+        </button>
+      </div>
+    </Carta>
   );
 }
